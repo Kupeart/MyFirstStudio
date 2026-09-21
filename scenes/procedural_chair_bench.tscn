@@ -1,5 +1,0 @@
-[gd_scene format=3 uid="uid://b8faruvtt2ewb"]
-
-[ext_resource type="PackedScene" uid="uid://b0ndq0sd285sj" path="res://assets/models/Furnatures/ProceduralChairBench/ProceduralChairBench.glb" id="1_pf60s"]
-
-[node name="ProceduralChairBench" unique_id=1193157385 instance=ExtResource("1_pf60s")]
