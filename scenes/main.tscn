@@ -80,7 +80,6 @@ directional_shadow_max_distance = 60.0
 [node name="Ground" type="StaticBody3D" parent="World" unique_id=695543981]
 
 [node name="Mesh" type="MeshInstance3D" parent="World/Ground" unique_id=390456813]
-visible = false
 material_override = SubResource("GridMat")
 cast_shadow = 0
 mesh = SubResource("Mesh_ground")

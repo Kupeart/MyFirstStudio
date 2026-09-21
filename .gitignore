@@ -14,3 +14,13 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# --- Project-specific (single root folder) ---
+*.exe
+*.gd.bak
+_ziva_scratch/
+exports/
+
+# Editor / addon temporary files
+~*
+*.TMP
