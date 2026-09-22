@@ -21,6 +21,8 @@ const DropAreaScript := preload("res://scripts/ui/world_drop_area.gd")
 const ObjectControlsScript := preload("res://scripts/ui/object_controls.gd")
 const SidePanelButtonScript := preload("res://scripts/ui/side_panel_button.gd")
 const MaterialPanelScript := preload("res://scripts/ui/material_panel.gd")
+const TimelineManagerScript := preload("res://scripts/core/timeline_manager.gd")
+const TimelinePanelScript := preload("res://scripts/ui/timeline_panel.gd")
 
 ## כל האובייקטים שהמשתמש הציב יושבים תחת הצומת הזה.
 @onready var props_root: Node3D = $World/Props
@@ -44,9 +46,14 @@ const MaterialPanelScript := preload("res://scripts/ui/material_panel.gd")
 @onready var camera_button: SidePanelButtonScript = $UI/CameraButton
 @onready var timeline_button: SidePanelButtonScript = $UI/TimelineButton
 @onready var material_panel: MaterialPanelScript = $UI/MaterialPanel
+@onready var timeline: TimelineManagerScript = $Timeline
+@onready var timeline_panel: TimelinePanelScript = $UI/TimelinePanel
 
 ## בנק האסטים של הפרויקט.
 var library: LibraryScript = null
+## מיקומי הרכיבים שיושבים בתחתית המסך (כפתורי הפינה וקטע המצב) לפני
+## שציר הזמן נפתח - כדי להחזיר אותם בדיוק למקומם כשהוא נסגר.
+var _bottom_offsets := {}
 
 
 func _ready() -> void:
@@ -71,13 +78,16 @@ func _ready() -> void:
 	help_panel.visible = false
 	asset_bank.visible = false
 	material_panel.visible = false
+	timeline_panel.visible = false
+	_capture_bottom_offsets()
 	bank_button.pressed.connect(_on_bank_button)
 	help_button.pressed.connect(_on_help_button)
-	# כפתורי הפינות החדשים: בחירת עולם, מצב מצלמה וציר הזמן. הפיצ'רים
-	# עצמם ייבנו בהמשך - בינתיים הכפתורים רק מסבירים מה יקרה.
+	# כפתורי הפינות: בחירת עולם ומצב מצלמה ייבנו בהמשך - בינתיים הם רק
+	# מסבירים מה יקרה. כפתור ציר הזמן כבר פותח את הציר בתחתית המסך.
 	world_button.pressed.connect(_on_world_button)
 	camera_button.pressed.connect(_on_camera_button)
 	timeline_button.pressed.connect(_on_timeline_button)
+	_setup_timeline()
 	_on_selection_changed([])
 
 
@@ -101,14 +111,75 @@ func _on_camera_button() -> void:
 	status_label.text = "מצב מצלמה ייפתח בהמשך - בינתיים המצלמה נשלטת בעכבר ובמקלדת"
 
 
-## כפתור ציר הזמן (ימין למטה) - בינתיים רק מחליף סמליל (סגור / פתוח).
+## כפתור ציר הזמן (ימין למטה) - פותח או סוגר את הציר בתחתית המסך.
+## הסמליל של הכפתור מתחלף (סגור / פתוח) דרך המנגנון הקיים.
 func _on_timeline_button() -> void:
 	var open := not timeline_button.is_timeline_open()
 	timeline_button.set_timeline_open(open)
+	_toggle_timeline(open)
 	if open:
-		status_label.text = "ציר הזמן ייפתח כאן בהמשך"
+		status_label.text = "ציר הזמן פתוח - בחרו עצם וצלמו פריים ב'לכידת פריים'"
 	else:
 		status_label.text = "ציר הזמן סגור"
+
+
+## מחבר את חלון ציר הזמן למנוע האנימציה ולמנוע הבחירה.
+func _setup_timeline() -> void:
+	timeline.setup(selection)
+	timeline_panel.capture_requested.connect(_on_timeline_capture)
+	timeline_panel.play_requested.connect(_on_timeline_play)
+	timeline_panel.stop_requested.connect(_on_timeline_stop)
+	timeline_panel.next_frame_requested.connect(_on_timeline_next_frame)
+	timeline_panel.previous_frame_requested.connect(_on_timeline_previous_frame)
+	timeline_panel.frame_selected.connect(_on_timeline_frame_selected)
+	timeline_panel.fps_changed.connect(_on_timeline_fps_changed)
+	timeline_panel.interpolation_toggled.connect(timeline.set_spline_mode)
+	timeline_panel.onion_toggled.connect(timeline.set_onion_skin)
+	timeline.frame_changed.connect(_on_timeline_frame_changed)
+	timeline.state_changed.connect(_on_timeline_state_changed)
+	timeline_panel.set_current_frame(timeline.current_frame)
+	timeline_panel.set_playing(timeline.playing)
+	timeline.set_fps(timeline_panel.get_fps())
+
+
+## מציג או מסתיר את חלון ציר הזמן. בזמן שהוא פתוח מזיזים את מה שיושב
+## בתחתית המסך כלפי מעלה, כדי שכפתור הסגירה וקטע המצב יישארו נגישים.
+func _toggle_timeline(open: bool) -> void:
+	_set_bottom_ui_lifted(open)
+	if not open:
+		timeline.stop()
+		timeline_panel.visible = false
+		return
+	timeline_panel.visible = true
+	timeline_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
+	var tween := create_tween()
+	tween.tween_property(timeline_panel, "modulate", Color.WHITE, 0.15)
+
+
+## שומר את מיקומי כפתורי הפינה התחתונים ואת קטע המצב, כדי להחזיר אותם
+## בדיוק למקומם כשציר הזמן נסגר.
+func _capture_bottom_offsets() -> void:
+	_bottom_offsets = {
+		"timeline_top": timeline_button.offset_top,
+		"timeline_bottom": timeline_button.offset_bottom,
+		"camera_top": camera_button.offset_top,
+		"camera_bottom": camera_button.offset_bottom,
+		"status_top": status_label.offset_top,
+		"status_bottom": status_label.offset_bottom,
+	}
+
+
+## מזיז את כפתורי הפינה התחתונים ואת קטע המצב מעל חלון ציר הזמן.
+func _set_bottom_ui_lifted(lifted: bool) -> void:
+	if _bottom_offsets.is_empty():
+		return
+	var shift := -(TimelinePanelScript.PANEL_HEIGHT + 8.0) if lifted else 0.0
+	timeline_button.offset_top = _bottom_offsets["timeline_top"] + shift
+	timeline_button.offset_bottom = _bottom_offsets["timeline_bottom"] + shift
+	camera_button.offset_top = _bottom_offsets["camera_top"] + shift
+	camera_button.offset_bottom = _bottom_offsets["camera_bottom"] + shift
+	status_label.offset_top = _bottom_offsets["status_top"] + shift
+	status_label.offset_bottom = _bottom_offsets["status_bottom"] + shift
 
 
 ## מציג או מסתיר חלון צד, עם הופעה חלקה קצרה.
@@ -187,3 +258,65 @@ func _on_selection_changed(items: Array) -> void:
 func _on_gizmo_mode_changed(_new_mode: int) -> void:
 	if selection != null and selection.selection_count() > 0:
 		_on_selection_changed(selection.get_selection())
+
+
+# ------------------------------------------------------------------ ציר הזמן
+
+## לכידת פריים - מקליט את העצים הנבחרים בפריים הנוכחי.
+func _on_timeline_capture() -> void:
+	var props := selection.get_selection()
+	if props.is_empty():
+		status_label.text = "בחרו עצם כדי להקליט פריים"
+		return
+	var recorded := timeline.capture(props)
+	if recorded == 0:
+		status_label.text = "לא נמצא עצם להקלטה"
+		return
+	var frame := timeline.current_frame
+	timeline_panel.set_frame_recorded(frame, timeline.has_key(frame))
+	status_label.text = "נקלט פריים %d (%d עצמים)" % [frame, recorded]
+
+
+## ניגון הציר מהפריים הראשון.
+func _on_timeline_play() -> void:
+	if not timeline.has_any_keys():
+		status_label.text = "אין עדיין פריימים מוקלטים - בחרו עצם וצלמו פריים"
+		return
+	timeline.play()
+	status_label.text = "מנגן את הציר - עצרו בכל רגע"
+
+
+## עצירת הניגון.
+func _on_timeline_stop() -> void:
+	timeline.stop()
+	status_label.text = "הניגון נעצר בפריים %d" % timeline.current_frame
+
+
+## מעבר לפריים הבא.
+func _on_timeline_next_frame() -> void:
+	timeline.stop()
+	timeline.next_frame()
+
+
+## מעבר לפריים הקודם.
+func _on_timeline_previous_frame() -> void:
+	timeline.stop()
+	timeline.previous_frame()
+
+
+## המשתמש בחר פריים ברצועה - העולם קופץ לתנוחה שהוקלטה בו.
+func _on_timeline_frame_selected(frame_index: int) -> void:
+	timeline.stop()
+	timeline.set_current_frame(frame_index)
+
+
+func _on_timeline_fps_changed(fps: int) -> void:
+	timeline.set_fps(fps)
+
+
+func _on_timeline_frame_changed(frame_index: int) -> void:
+	timeline_panel.set_current_frame(frame_index)
+
+
+func _on_timeline_state_changed(playing: bool) -> void:
+	timeline_panel.set_playing(playing)

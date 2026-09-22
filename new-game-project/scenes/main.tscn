@@ -12,6 +12,8 @@
 [ext_resource type="Script" uid="uid://dgkppb714uknt" path="res://scripts/ui/object_controls.gd" id="12_controls"]
 [ext_resource type="Script" uid="uid://bneacmmgnhmur" path="res://scripts/ui/side_panel_button.gd" id="13_side"]
 [ext_resource type="Script" uid="uid://cbc37qubwy17y" path="res://scripts/ui/material_panel.gd" id="14_matpanel"]
+[ext_resource type="Script" path="res://scripts/core/timeline_manager.gd" id="15_timeline"]
+[ext_resource type="PackedScene" path="res://scenes/ui/timeline_panel.tscn" id="16_timeline_panel"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_day"]
 sky_top_color = Color(0.223529, 0.470588, 0.898039, 1)
@@ -99,6 +101,9 @@ script = ExtResource("7_select")
 
 [node name="MoveGizmo" type="Node3D" parent="." unique_id=678097488]
 script = ExtResource("8_gizmo")
+
+[node name="Timeline" type="Node" parent="." unique_id=779140221]
+script = ExtResource("15_timeline")
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=1333899541]
 script = ExtResource("2_rig")
@@ -278,3 +283,5 @@ grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("13_side")
 slot = 4
+
+[node name="TimelinePanel" parent="UI" instance=ExtResource("16_timeline_panel")]
