@@ -15,3 +15,8 @@ func get_mode_name() -> String:
 
 func get_ball_kind() -> StringName:
 	return &"iron"
+
+
+## קוטר ברירת המחדל של כדור ברזל - חמישה עשר סנטימטר (כדור משקולת).
+func get_default_diameter() -> float:
+	return 0.15

@@ -172,6 +172,9 @@ var _ball_start_squash := 0.0
 var _ball_grab_point := Vector2.ZERO
 ## מרחק העכבר ממרכז הכדור (על המסך) בתחילת גרירת קנה המידה.
 var _ball_scale_start_distance := 1.0
+## גובה מרכז הכדור (במרחב המקומי) בתחילת הגרירה - סביב הגובה הזה
+## הכדור גדל, כך שמרכזו נשאר בדיוק במקום שבו יושב הגיזמו.
+var _ball_center_height := 0.0
 
 ## מצב הגרירה: הטרנספורמציות המקוריות של כל העצמים, ומרכז הקבוצה -
 ## לצורך חישוב התנועה/סיבוב וצורך ביטול (RMB cancel).
@@ -440,7 +443,10 @@ func cancel_drag() -> void:
 			_resize_table.set_dimensions(_resize_start_dims)
 	# ביטול עריכת כדור: מחזירים גם את המידות וגם את מצב הלחיצה/מתיחה.
 	if _is_ball_handle(_active) and _ball != null and is_instance_valid(_ball):
-		if _ball.has_method("set_dimensions"):
+		# מחזירים בדיוק למצב שלפני הגרירה - כולל מיקום מרכז הכדור.
+		if _ball.has_method("set_dimensions_around_center"):
+			_ball.set_dimensions_around_center(_ball_start_dims, _ball_center_height)
+		elif _ball.has_method("set_dimensions"):
 			_ball.set_dimensions(_ball_start_dims)
 		if _ball.has_method("set_squash_stretch"):
 			_ball.set_squash_stretch(_ball_start_squash)
@@ -1085,6 +1091,11 @@ func _begin_drag(handle: Handle, origin: Vector3, direction: Vector3, point: Vec
 				_ball_start_dims = _ball.get_dimensions()
 			if _ball.has_method("get_squash_stretch"):
 				_ball_start_squash = _ball.get_squash_stretch()
+			# מרכז הכדור נשאר קבוע לאורך כל הגרירה - סביבו הכדור גדל.
+			if _ball.has_method("get_local_center"):
+				_ball_center_height = _ball.get_local_center().y
+			else:
+				_ball_center_height = _ball_start_dims.y * 0.5
 		if _camera != null:
 			var center_screen := _camera.unproject_position(global_position)
 			_ball_scale_start_distance = maxf(_ball_grab_point.distance_to(center_screen), 1.0)
@@ -1571,18 +1582,23 @@ func _update_ball_handles() -> void:
 		return
 	var dims: Vector3 = ball.get_dimensions()
 	var gizmo_scale := maxf(scale.x, 0.001)
+	# הידיות נצמדות למרכז הכדור הנוכחי בעולם. הגיזמו עצמו קפוא בזמן
+	# הגרירה (כדי שנקודת הסכימה לא תזוז), אבל הכדור גדל סביב מרכזו -
+	# ולכן הידיות עוקבות אחרי המרכז כדי להישאר על הכדור ולא "לברוח" ממנו.
+	var center_world: Vector3 = ball.get_center() if ball.has_method("get_center") else global_position
+	var center_local: Vector3 = (center_world - global_position) / gizmo_scale
 	for entry in _ball_holders:
 		var holder: Node3D = entry["node"]
 		if entry["kind"] == "ring":
-			# הטבעת עוטפת את הכדור: הרדיוס שלה שווה לרדיוס הכדור.
+			# הטבעת עוטפת את הכדור בקו המשווה: הרדיוס שלה שווה לרדיוס הכדור.
 			var ball_radius := maxf(dims.x, dims.z) * 0.5
 			var mesh: MeshInstance3D = entry["mesh"]
 			var wanted := ball_radius / maxf(KADOR_RING_RADIUS * gizmo_scale, 0.0001)
 			mesh.scale = Vector3.ONE * maxf(wanted, 0.05)
-			holder.position = Vector3.ZERO
+			holder.position = center_local
 		else:
-			# ידית הלחיצה/מתיחה יושבת מעל מרכז הכדור.
-			holder.position = Vector3(0.0, dims.y * 0.5, 0.0) / gizmo_scale
+			# ידית הלחיצה/מתיחה יושבת מעל הכדור.
+			holder.position = center_local + Vector3(0.0, dims.y * 0.5, 0.0) / gizmo_scale
 
 
 ## עיגול קנה המידה: גרירה משנה את כל גודל הכדור (קנה מידה אחיד),
@@ -1599,7 +1615,13 @@ func _kador_scale_drag(screen_position: Vector2) -> void:
 	)
 	if Input.is_key_pressed(KEY_SHIFT):
 		factor = snappedf(factor, 0.25)
-	_ball.set_dimensions(_ball_start_dims * factor)
+	var dims: Vector3 = _ball_start_dims * factor
+	# הכדור גדל סביב מרכזו (ולא מהבסיס): הוא מתנפח סימטרית לכל הכיוונים,
+	# ומרכזו נשאר בדיוק במקום שהגיזמו יושב בו.
+	if _ball.has_method("set_dimensions_around_center"):
+		_ball.set_dimensions_around_center(dims, _ball_center_height)
+	else:
+		_ball.set_dimensions(dims)
 
 
 ## ידית הלחיצה/מתיחה: גרירה מעלה מותחת (shape key "stretch"),

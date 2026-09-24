@@ -2,9 +2,13 @@ class_name Kador
 extends Node3D
 ## בסיס משותף לכל סוגי הכדורים (כדור ים, רגל, סליים, ברזל).
 ##
-## הסקריפט טוען את קובץ ה-GLB של הכדור, מיישר אותו כך שנקודת המוצא תהיה
-## בתחתית-המרכז (הכדור יושב על הרצפה), וחושף ממשק אחיד לגיזמו:
+## הסקריפט טוען את קובץ ה-GLB של הכדור, מנרמל את גודלו לקוטר הגיוני,
+## מיישר אותו כך שנקודת המוצא תהיה בתחתית-המרכז (הכדור יושב על הרצפה),
+## וחושף ממשק אחיד לגיזמו:
 ##   - get_dimensions() / set_dimensions() - שינוי גובה/גודל.
+##   - set_dimensions_around_center()      - גדילה סביב מרכז הכדור.
+##   - get_center() / get_local_center()   - מרכז הכדור (שם יושב הגיזמו).
+##   - get_default_diameter()              - הקוטר שבו הכדור נוצר.
 ##   - has_shape_keys()                    - האם יש לכדור shape keys.
 ##   - get_squash_stretch() / set_squash_stretch() - לחיצה/מתיחה.
 ##
@@ -26,6 +30,9 @@ var _glb: Node3D = null
 var _mesh: MeshInstance3D = null
 ## המידות המקוריות כפי שיצאו מבלנדר.
 var _base_dims := Vector3.ONE
+## מרכז הכדור במרחב המקומי של העצם. מתעדכן בכל עיגון (בסיס או מרכז),
+## כדי שמרכז הכדור תמיד יהיה ידוע בלי למדוד את הגיאומטריה בכל פריים.
+var _center_local := Vector3.ZERO
 ## אינדקסים של shape keys הלחיצה והמתיחה (או 1- אם אין).
 var _squash_idx := -1
 var _stretch_idx := -1
@@ -38,6 +45,7 @@ func _ready() -> void:
 	_apply_material()
 	_center_model()
 	dimensions = _base_dims
+	_apply_default_size()
 	resized.emit()
 
 
@@ -61,6 +69,13 @@ func get_mode_name() -> String:
 ## מזהה סוג הכדור (לתצוגה/בדיקות).
 func get_ball_kind() -> StringName:
 	return &""
+
+
+## הקוטר (במטרים) שבו הכדור נוצר כברירת מחדל. קבצים שיוצאים מבלנדר
+## מגיעים לפעמים בקנה מידה לא נכון (כדור ענקי), ולכן המנוע מנרמל כל
+## כדור לגודל הגיוני לילדים. כל כדור קובע את הקוטר שלו.
+func get_default_diameter() -> float:
+	return 0.5
 
 
 ## האם לכדור יש shape keys של לחיצה/מתיחה.
@@ -113,16 +128,48 @@ func _blend_shape_index(mesh: ArrayMesh, wanted: String) -> int:
 
 
 ## מזיז את המודל כך שנקודת המוצא תהיה בתחתית-המרכז (הכדור על הרצפה).
+## כאן נמדדות גם המידות המקוריות של הכדור כפי שיצאו מבלנדר.
 func _center_model() -> void:
 	if _glb == null:
 		return
 	var bounds := ModelBoundsScript.base_aabb(_glb)
 	if bounds.size == Vector3.ZERO:
 		_base_dims = Vector3.ONE
+		_center_local = Vector3(0.0, 0.5, 0.0)
 		return
 	_base_dims = bounds.size
-	var offset := Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
-	_glb.position -= offset
+	# הכדור יושב על הבסיס: מרכזו בגובה חצי מהמידה המקורית.
+	_anchor_center(_base_dims.y * 0.5)
+
+
+## ממרכז את המודל בתוך הכדור: אופקית תמיד במרכז, ואנכית כך שמרכז
+## הגיאומטריה ייפול בגובה center_height (במרחב המקומי של הכדור).
+##
+## למה זה נחוץ: הסקייל מתבצע סביב ראשית המודל, ולא סביב מרכז הגיאומטריה.
+## בלי העיגון הזה הגיאומטריה נסחפת הצידה והחוצה בכל שינוי מידות - מה
+## שגרם לכדור "לגדול מוזר". עיגון למרכז נותן גדילה סימטרית סביב המרכז.
+func _anchor_center(center_height: float) -> void:
+	_center_local = Vector3(0.0, center_height, 0.0)
+	if _glb == null:
+		return
+	var box := ModelBoundsScript.base_aabb(_glb)
+	if box.size == Vector3.ZERO:
+		return
+	var box_center := box.get_center()
+	_glb.position -= Vector3(box_center.x, 0.0, box_center.z)
+	_glb.position.y += center_height - box_center.y
+
+
+## מנרמל את גודל הכדור לקוטר ברירת המחדל. שלושת הצירים מקבלים את אותו
+## קוטר, ולכן הכדור נשאר עגול ולא נמתח.
+func _apply_default_size() -> void:
+	var diameter := get_default_diameter()
+	if diameter <= 0.0 or _base_dims == Vector3.ZERO:
+		return
+	var longest := maxf(maxf(_base_dims.x, _base_dims.y), _base_dims.z)
+	if is_equal_approx(longest, diameter):
+		return
+	set_dimensions(Vector3.ONE * diameter)
 
 
 ## הקופסה התוחמת של הכדור במרחב המקומי (בלי ה-shape keys), עבור
@@ -133,9 +180,14 @@ func get_base_bounds() -> AABB:
 	return ModelBoundsScript.base_aabb(_glb)
 
 
-## מרכז הכדור בעולם - הראשית שלו היא בתחתית, ולכן מוסיפים חצי גובה.
+## מרכז הכדור במרחב המקומי של העצם (מתעדכן בכל עיגון).
+func get_local_center() -> Vector3:
+	return _center_local
+
+
+## מרכז הכדור בעולם - שם יושב הגיזמו, ומסביבו הכדור גדל ומתכווץ.
 func get_center() -> Vector3:
-	return global_transform * Vector3(0.0, dimensions.y * 0.5, 0.0)
+	return global_transform * _center_local
 
 
 # ------------------------------------------------------------------ מידות
@@ -145,19 +197,33 @@ func get_dimensions() -> Vector3:
 	return dimensions
 
 
-## קובע את מידות הכדור. הסקייל מחושב ביחס למידות המקוריות, כך
-## שהכדור גדל/מתכווץ סביב הבסיס שלו.
+## קובע את מידות הכדור כשהבסיס נשאר על הרצפה (המרכז בגובה חצי גובה).
+## הסקייל מחושב ביחס למידות המקוריות.
 func set_dimensions(new_dimensions: Vector3) -> void:
+	_apply_dimensions(new_dimensions)
+	_anchor_center(dimensions.y * 0.5)
+	resized.emit()
+
+
+## קובע את מידות הכדור כך שיגדל או יקטן סביב מרכזו: מרכז הכדור נשאר
+## בגובה center_height (במרחב המקומי), והבסיס נע בהתאם - למטה כשהכדור
+## גדל ולמעלה כשהוא קטן. זו הגרירה של עיגול קנה המידה.
+func set_dimensions_around_center(new_dimensions: Vector3, center_height: float) -> void:
+	_apply_dimensions(new_dimensions)
+	_anchor_center(center_height)
+	resized.emit()
+
+
+## מסקייל את המודל ליחס שבין המידות החדשות למקוריות, בלי לעגן אותו.
+func _apply_dimensions(new_dimensions: Vector3) -> void:
 	dimensions = new_dimensions
 	if _glb == null:
 		return
-	var factor := Vector3(
+	_glb.scale = Vector3(
 		new_dimensions.x / maxf(_base_dims.x, 0.001),
 		new_dimensions.y / maxf(_base_dims.y, 0.001),
 		new_dimensions.z / maxf(_base_dims.z, 0.001)
 	)
-	_glb.scale = factor
-	resized.emit()
 
 
 # ------------------------------------------------------------------ לחיצה / מתיחה

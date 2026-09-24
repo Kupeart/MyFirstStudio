@@ -15,7 +15,7 @@ static func apply_height_scale(target: Node3D, factor: float) -> void:
 ## Apply squash/stretch via shape keys
 static func apply_squash_stretch(simple_ball: Node3D, value: float) -> void:
 	# value: -1 = full squash, 0 = neutral, +1 = full stretch
-	if not simple_ball or not simple_ball is SimpleBall:
+	if not simple_ball:
 		return
 	
 	value = clampf(value, -1.0, 1.0)

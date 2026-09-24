@@ -24,3 +24,6 @@ exports/
 # Editor / addon temporary files
 ~*
 *.TMP
+
+# design plans - not part of the project
+Plans/

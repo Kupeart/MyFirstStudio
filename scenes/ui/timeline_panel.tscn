@@ -1,0 +1,142 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/timeline_panel.gd" id="1_timeline"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/ConstantContainer.png" id="2_container"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/Timeline Ruler.png" id="3_ruler"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/ResetButton.png" id="4_reset"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/Next_PreviousKey.png" id="5_key"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/Next_PreviousFrame.png" id="6_frame"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/Playbutton.png" id="7_play"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/PauseButton.png" id="8_pause"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/CaptureFrame.png" id="9_capture"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/ToggleStepped.png" id="10_stepped"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/OnionSkinOff.png" id="11_onion"]
+[ext_resource type="Texture2D" path="res://assets/2DUI/TimelineIcons/Autoframe_Disabled.png" id="12_auto"]
+
+[node name="TimelinePanel" type="Control"]
+visible = false
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -287.0
+offset_right = -18.0
+grow_vertical = 0
+script = ExtResource("1_timeline")
+
+[node name="Container" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+expand_mode = 1
+stretch_mode = 0
+texture = ExtResource("2_container")
+mouse_filter = 2
+
+[node name="Ruler" type="TextureRect" parent="."]
+anchor_right = 1.0
+offset_top = 86.0
+offset_bottom = 287.0
+expand_mode = 1
+stretch_mode = 0
+texture = ExtResource("3_ruler")
+mouse_filter = 2
+
+[node name="Frames" type="Control" parent="."]
+anchor_right = 1.0
+offset_top = 86.0
+offset_bottom = 287.0
+mouse_filter = 2
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+offset_left = 24.0
+offset_top = 19.0
+offset_right = -24.0
+offset_bottom = 67.0
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "חזרה לפריים הראשון"
+texture_normal = ExtResource("4_reset")
+stretch_mode = 3
+
+[node name="PreviousKeyButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "Keyframe קודם ( , )"
+texture_normal = ExtResource("5_key")
+stretch_mode = 3
+
+[node name="PreviousButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "פריים קודם ( שמאלה )"
+texture_normal = ExtResource("6_frame")
+stretch_mode = 3
+
+[node name="PlayButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "נגן (רווח)"
+texture_normal = ExtResource("7_play")
+stretch_mode = 3
+
+[node name="StopButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "עצירה (רווח)"
+texture_normal = ExtResource("8_pause")
+stretch_mode = 3
+
+[node name="NextButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "פריים הבא ( ימינה )"
+texture_normal = ExtResource("6_frame")
+flip_h = true
+stretch_mode = 3
+
+[node name="NextKeyButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "Keyframe הבא ( . )"
+texture_normal = ExtResource("5_key")
+flip_h = true
+stretch_mode = 3
+
+[node name="CaptureButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "לכידת פריים ( I )"
+texture_normal = ExtResource("9_capture")
+stretch_mode = 3
+
+[node name="Sep" type="VSeparator" parent="TopBar"]
+layout_mode = 2
+
+[node name="InterpolationButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "אינטרפולציה בין הקלטות: Stepped או Spline"
+texture_normal = ExtResource("10_stepped")
+stretch_mode = 3
+
+[node name="OnionButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "בצל: רוחות רפאים של הפריים הקודם והבא"
+texture_normal = ExtResource("11_onion")
+stretch_mode = 3
+
+[node name="AutoFrameButton" type="TextureButton" parent="TopBar"]
+layout_mode = 2
+tooltip_text = "צילום אוטומטי בסיום הזזה או סיבוב"
+texture_normal = ExtResource("12_auto")
+stretch_mode = 3
+
+[node name="Spacer" type="Control" parent="TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="FpsLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "קצב פריימים:"
+vertical_alignment = 1
+
+[node name="FpsOption" type="OptionButton" parent="TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18

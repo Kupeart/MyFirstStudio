@@ -12,7 +12,6 @@ extends Node
 ##   קליק ימני             = ביטול כל השינויים וחזרה למצב שלפני הבחירה
 ##   Delete                = מחיקת העצמים הנבחרים
 ##   Ctrl + D              = שכפול העצמים הנבחרים
-##   חצים במקלדת           = סיבוב ב-15 מעלות
 ##   Esc / ✓               = ביטול הבחירה (הסימון מוסר)
 ##
 ## כשנבחרים כמה עצמים - כולם מסומנים יחד, והגיזמו שלהם הוא גיזמו
@@ -24,7 +23,8 @@ const GizmoScript := preload("res://scripts/core/move_gizmo.gd")
 const PlacementScript := preload("res://scripts/core/placement.gd")
 const ModelBoundsScript := preload("res://scripts/core/model_bounds.gd")
 
-## כמה מעלות מסתובבים בכל לחיצה על חץ במקלדת.
+## כמה מעלות מסתובבים בקריאה ל-rotate_selected. הסיבוב במקלדת הוסר -
+## החצים שייכים היום לציר הזמן (פריים קודם / פריים הבא).
 const ROTATE_STEP := 15.0
 ## באיזה מרחק לאורך הקרן מחפשים עצם.
 const RAY_LENGTH := 500.0
@@ -238,10 +238,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		delete_selected()
 	elif event.is_action_pressed("duplicate_object"):
 		duplicate_selected()
-	elif event.is_action_pressed("rotate_left"):
-		rotate_selected(-ROTATE_STEP)
-	elif event.is_action_pressed("rotate_right"):
-		rotate_selected(ROTATE_STEP)
 	elif event.is_action_pressed("cancel"):
 		set_selection([])
 
@@ -364,7 +360,9 @@ func duplicate_selected() -> void:
 		set_selection(copies)
 
 
-## מסובב את כל העצמים הנבחרים סביב הציר האנכי שלהם (חצים במקלדת).
+## מסובב את כל העצמים הנבחרים סביב הציר האנכי שלהם.
+## שים לב: הסיבוב במקלדת הוסר - החצים מעבירים עכשיו בין פריימים בציר הזמן.
+## הפונקציה נשארה API ציבורי, וסיבוב בפועל נעשה בטבעות הגיזמו ובסרגל הצף.
 func rotate_selected(degrees: float) -> void:
 	if _selection.is_empty():
 		return

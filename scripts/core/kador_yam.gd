@@ -26,3 +26,8 @@ func get_mode_name() -> String:
 
 func get_ball_kind() -> StringName:
 	return &"beach"
+
+
+## קוטר ברירת המחדל של כדור ים - חצי מטר (כמו כדור ים אמיתי).
+func get_default_diameter() -> float:
+	return 0.5

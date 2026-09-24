@@ -12,12 +12,13 @@ extends Button
 ##   toggle_style = false - כפתור פעולה (שכפול/אישור/מחיקה/חלונות):
 ##                          הסמל תמיד בהיר.
 
-enum Kind { MOVE, ROTATE, SCALE, RESIZE, DUPLICATE, CONFIRM, DELETE, TOOLBOX, CHAIR, HELP }
+enum Kind { MOVE, ROTATE, SCALE, RESIZE, DUPLICATE, CONFIRM, DELETE, TOOLBOX, CHAIR, HELP, NONE }
 
 ## גדלים: עם רקע מעוגל או סמל בלבד (כמו ה-✓ וה-✗ בסקיצה).
 const SIZE_BOXED := Vector2(46.0, 46.0)
 const SIZE_BARE := Vector2(40.0, 40.0)
-const CORNER_RADIUS := 11
+## כמה מגודל הכפתור תופס אייקון תמונה (השאר נשאר שוליים).
+const TEXTURE_INSET := 0.95
 
 ## צבע הסמלים במצב רגיל (כחול-ציאן כמו בסקיצה).
 const ICON_COLOR := Color(0.42, 0.72, 1.0)
@@ -34,8 +35,12 @@ const PRESSED_BG := Color(0.42, 0.72, 1.0, 0.45)
 const CONFIRM_COLOR := Color(0.44, 0.92, 0.5)
 const DELETE_COLOR := Color(0.96, 0.42, 0.40)
 const PLAIN_COLOR := Color(0.92, 0.94, 0.98)
+const CORNER_RADIUS := 6.0
 
 var icon_kind: Kind = Kind.MOVE
+## אייקון תמונה (PNG מ-assets/2DUI/Icons) שמחליף את הסמל המצויר בקוד.
+## null = מציירים את הסמל בקוד כרגיל.
+var icon_texture: Texture2D = null
 ## האם יש רקע מעוגל מאחורי הסמל.
 var boxed := true
 ## האם הסמל מתעמעם כשלא פעיל (כפתור מצב) או תמיד בהיר (כפתור פעולה).
@@ -58,16 +63,24 @@ func configure(
 	tip: String,
 	color: Color = ICON_COLOR,
 	with_background: bool = true,
-	is_toggle: bool = true
+	is_toggle: bool = true,
+	texture: Texture2D = null
 ) -> void:
 	icon_kind = kind_value
 	tooltip_text = tip
 	icon_color = color
 	boxed = with_background
 	toggle_style = is_toggle
+	icon_texture = texture
 	custom_minimum_size = SIZE_BOXED if boxed else SIZE_BARE
 	if is_inside_tree():
 		_apply_style()
+	queue_redraw()
+
+
+## מחליף את אייקון התמונה של הכפתור (למשל סמליל ציר זמן סגור/פתוח).
+func set_icon_texture(texture: Texture2D) -> void:
+	icon_texture = texture
 	queue_redraw()
 
 
@@ -119,6 +132,11 @@ func _draw() -> void:
 	if toggle_style:
 		color.a = 1.0 if active else IDLE_ALPHA
 
+	# כפתור עם אייקון תמונה מצייר את התמונה עצמה במקום הסמל המצויר בקוד.
+	if icon_texture != null:
+		_draw_texture_icon(center, extent, color)
+		return
+
 	match icon_kind:
 		Kind.MOVE:
 			_draw_move(center, extent * 0.33, color)
@@ -140,6 +158,18 @@ func _draw() -> void:
 			_draw_chair(center, extent * 0.30, color)
 		Kind.HELP:
 			_draw_help(center, extent, color)
+
+
+## מצייר אייקון תמונה במרכז הכדור, מוקטן כך שייכנס בריבוע שגודלו
+## TEXTURE_INSET מגודל הכפתור, בלי לעוות את יחס הגובה-רוחב שלו.
+func _draw_texture_icon(center: Vector2, extent: float, color: Color) -> void:
+	var tex_size := icon_texture.get_size()
+	if tex_size.x <= 0.0 or tex_size.y <= 0.0:
+		return
+	var box := extent * TEXTURE_INSET
+	var fit := minf(box / tex_size.x, box / tex_size.y)
+	var draw_size := tex_size * fit
+	draw_texture_rect(icon_texture, Rect2(center - draw_size * 0.5, draw_size), false, color)
 
 
 ## ארבעה חצים מהמרכז לכל הכיוונים - סמל ההזזה.

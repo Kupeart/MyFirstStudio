@@ -26,3 +26,8 @@ func get_mode_name() -> String:
 
 func get_ball_kind() -> StringName:
 	return &"soccer"
+
+
+## קוטר ברירת המחדל של כדור רגל - רבע מטר (כדור רגל אמיתי).
+func get_default_diameter() -> float:
+	return 0.25

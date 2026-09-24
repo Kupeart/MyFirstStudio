@@ -15,3 +15,8 @@ func get_mode_name() -> String:
 
 func get_ball_kind() -> StringName:
 	return &"jelly"
+
+
+## קוטר ברירת המחדל של כדור סליים - ארבעים סנטימטר.
+func get_default_diameter() -> float:
+	return 0.4

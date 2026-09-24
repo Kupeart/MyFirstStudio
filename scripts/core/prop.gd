@@ -129,7 +129,9 @@ func _add_collision() -> void:
 	var shape := CollisionShape3D.new()
 	shape.name = "Collision"
 	shape.shape = box
-	shape.position = Vector3(bounds.get_center().x, size.y * 0.5, bounds.get_center().z)
+	# מרכז התיבה לפי מרכז הגיאומטריה בפועל (בדרך כלל חצי גובה) - כך
+	# היא נשארת עוטפת את העצם גם כשכדור גדל סביב מרכזו והבסיס שלו יורד.
+	shape.position = bounds.get_center()
 
 	_body = StaticBody3D.new()
 	_body.name = "Body"
@@ -163,7 +165,7 @@ func refresh_collision() -> void:
 	var box := shape_node.shape as BoxShape3D
 	if box != null:
 		box.size = size
-	shape_node.position = Vector3(bounds.get_center().x, size.y * 0.5, bounds.get_center().z)
+	shape_node.position = bounds.get_center()
 
 
 func _collect_meshes(node: Node) -> void:

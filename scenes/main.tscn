@@ -12,6 +12,8 @@
 [ext_resource type="Script" uid="uid://dgkppb714uknt" path="res://scripts/ui/object_controls.gd" id="12_controls"]
 [ext_resource type="Script" uid="uid://bneacmmgnhmur" path="res://scripts/ui/side_panel_button.gd" id="13_side"]
 [ext_resource type="Script" uid="uid://cbc37qubwy17y" path="res://scripts/ui/material_panel.gd" id="14_matpanel"]
+[ext_resource type="Script" path="res://scripts/core/timeline_manager.gd" id="15_timeline"]
+[ext_resource type="PackedScene" path="res://scenes/ui/timeline_panel.tscn" id="16_timeline_panel"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMat_day"]
 sky_top_color = Color(0.223529, 0.470588, 0.898039, 1)
@@ -91,6 +93,8 @@ shape = SubResource("Shape_ground")
 
 [node name="Lights" type="Node3D" parent="World" unique_id=2120000722]
 
+[node name="OnionGhosts" type="Node3D" parent="World" unique_id=1710294583]
+
 [node name="Placement" type="Node3D" parent="." unique_id=692691477]
 script = ExtResource("6_place")
 
@@ -99,6 +103,9 @@ script = ExtResource("7_select")
 
 [node name="MoveGizmo" type="Node3D" parent="." unique_id=678097488]
 script = ExtResource("8_gizmo")
+
+[node name="Timeline" type="Node" parent="." unique_id=779140221]
+script = ExtResource("15_timeline")
 
 [node name="CameraRig" type="Node3D" parent="." unique_id=1333899541]
 script = ExtResource("2_rig")
@@ -139,7 +146,7 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -400.0
-offset_top = 72.0
+offset_top = 80.0
 offset_right = -18.0
 offset_bottom = 72.0
 grow_horizontal = 0
@@ -193,6 +200,7 @@ horizontal_alignment = 2
 
 [node name="AssetBank" parent="UI" unique_id=781875441 instance=ExtResource("4_bank")]
 anchors_preset = 9
+offset_top = 144.0
 
 [node name="StatusLabel" type="Label" parent="UI" unique_id=182452132]
 offset_left = 380.0
@@ -224,18 +232,58 @@ script = ExtResource("14_matpanel")
 [node name="BankButton" type="Button" parent="UI" unique_id=457680995]
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 62.0
-offset_bottom = 62.0
+offset_right = 72.0
+offset_bottom = 72.0
 script = ExtResource("13_side")
 
 [node name="HelpButton" type="Button" parent="UI" unique_id=1178525563]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -62.0
+offset_left = -72.0
 offset_top = 16.0
 offset_right = -16.0
-offset_bottom = 62.0
+offset_bottom = 72.0
 grow_horizontal = 0
 script = ExtResource("13_side")
 slot = 1
+
+[node name="WorldButton" type="Button" parent="UI" unique_id=1104783291]
+offset_left = 16.0
+offset_top = 80.0
+offset_right = 72.0
+offset_bottom = 136.0
+script = ExtResource("13_side")
+slot = 2
+
+[node name="CameraButton" type="Button" parent="UI" unique_id=1703550422]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -136.0
+offset_top = -72.0
+offset_right = -80.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("13_side")
+slot = 3
+
+[node name="TimelineButton" type="Button" parent="UI" unique_id=1573066533]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -72.0
+offset_top = -72.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("13_side")
+slot = 4
+
+[node name="TimelinePanel" parent="UI" instance=ExtResource("16_timeline_panel")]

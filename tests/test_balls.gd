@@ -175,8 +175,12 @@ func test_gizmo_centered_at_ball_center() -> void:
 		gizmo.global_position.distance_to(expected) < 0.01,
 		"הגיזמו לא יושב במרכז הכדור"
 	)
-	assert(gizmo.global_position.y > 0.5, "הגיזמו לא הורם למרכז הכדור")
-
+	# הגיזמו מונף מעל הרצפה - בגובה מרכז הכדור (חצי מהקוטר שלו).
+	var half_height: float = (made[1] as Node3D).get_dimensions().y * 0.5
+	assert(
+		gizmo.global_position.y > half_height * 0.9,
+		"הגיזמו לא הורם למרכז הכדור"
+	)
 	# גם כשמצמידים את הגיזמו ישירות לכדור (בלי Prop) - הוא עדיין במרכז.
 	var direct := GizmoScript.new()
 	root.add_child(direct)
